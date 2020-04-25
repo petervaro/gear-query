@@ -22,7 +22,7 @@ pub struct Item
     name: Option<String>,
     group: Option<String>,
     weight: Option<i32>,
-    price: Option<f64>,
+    price: Option<f32>,
     distances: HashSet<String>,
     temperatures: HashSet<String>,
 }
@@ -56,6 +56,18 @@ impl Item
     pub fn is_temperature(&self, temperature: &str) -> bool
     {
         self.temperatures.contains(temperature)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn weight(&self) -> i32
+    {
+        self.weight.unwrap_or_default()
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn price(&self) -> f32
+    {
+        self.price.unwrap_or_default()
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

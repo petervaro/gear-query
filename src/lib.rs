@@ -5,6 +5,7 @@ mod filter;
 mod filters;
 mod table;
 mod column;
+mod sum;
 
 use clap::ArgMatches;
 
@@ -24,6 +25,7 @@ use filters::{
     IsInTemperatures,
 };
 use table::Table;
+use sum::Sum;
 
 
 /*----------------------------------------------------------------------------*/
@@ -90,11 +92,11 @@ pub fn main() -> Result<()>
     let arguments = arguments();
     let gear = Gear::from_toml(arguments.value_of("path")
                                         .unwrap_or("gear.toml"))?;
-    let result = filtered_gear(&gear, &arguments);
+    let results = filtered_gear(&gear, &arguments);
 
-    if result.is_empty()
+    if results.is_empty()
     {
-        println!("No results found");
+        println!("No items found");
     }
     else
     {
@@ -109,11 +111,16 @@ pub fn main() -> Result<()>
 
                 headers
             };
-        println!("{}", Table::new(headers, &result));
-        match result.len()
+        println!("{}", Table::new(headers, &results));
+        match results.len()
         {
-            1 => println!("1 result found"),
-            len => println!("{} results found", len),
+            1 => println!("1 item found"),
+            len => println!("{} items found", len),
+        }
+
+        if let Some(column) = arguments.value_of("sum")
+        {
+            println!("{}", Sum::new(column, gear.meta(), &results));
         }
     }
 

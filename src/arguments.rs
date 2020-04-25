@@ -16,7 +16,7 @@ pub fn arguments<'a>() -> ArgMatches<'a>
                              .takes_value(false)
                              .conflicts_with("base")
                              .conflicts_with("consumables")
-                             .conflicts_with("group")
+                             .conflicts_with("groups")
                              .help("Show all items of all groups both \
                                     'base' and 'consumables'");
 
@@ -72,7 +72,7 @@ pub fn arguments<'a>() -> ArgMatches<'a>
                                  .value_name("COLUMN")
                                  .multiple(false)
                                  .possible_values(&values)
-                                 .help("N/A")
+                                 .help("Sum up the specified column's values")
         };
 
     let sort =

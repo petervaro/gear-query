@@ -5,6 +5,7 @@ use toml::from_str;
 use serde::Deserialize;
 
 use crate::input::{
+    Meta,
     Item,
     Group,
 };
@@ -14,6 +15,7 @@ use crate::input::{
 #[derive(Deserialize)]
 pub struct Gear
 {
+    meta: Meta,
     base: Vec<Item>,
     consumables: Vec<Item>,
     groups: Vec<Group>,
@@ -29,6 +31,12 @@ impl Gear
         let input = read_to_string(file_name)?;
         let input = from_str(&input)?;
         Ok(input)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn meta(&self) -> &Meta
+    {
+        &self.meta
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
