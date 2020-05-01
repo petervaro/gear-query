@@ -1,6 +1,8 @@
 [package]
 name = "gear"
-version = "0.4.1"
+description = """Gear query is an easy to use command line tool to keep track \
+                 and query outdoor / backpacking equipment"""
+version = "0.4.2"
 authors = ["Peter Varo <hello@petervaro.com>"]
 edition = "2018"
 

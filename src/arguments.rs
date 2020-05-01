@@ -118,9 +118,27 @@ pub fn arguments<'a>() -> ArgMatches<'a>
                               .help("Specify path to the TOML file contains \
                                      gear items");
 
-    // TODO: use CARGO_PKG_DESCRIPTION to populer `.about`
+    let license = "\
+LICENSE:
+    Copyright (C) 2020 Peter Varo
+
+    This program is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by the Free
+    Software Foundation, either version 3 of the License, or (at your option)
+    any later version.
+
+    This program is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+    more details.
+
+    You should have received a copy of the GNU General Public License along with
+    this program.  If not, see <https://www.gnu.org/licenses/>.
+";
+
     App::new("Gear Query").version(env!("CARGO_PKG_VERSION"))
                           .author(env!("CARGO_PKG_AUTHORS"))
+                          .about(env!("CARGO_PKG_DESCRIPTION"))
                           .arg(path)
                           .arg(all)
                           .arg(base)
@@ -132,5 +150,7 @@ pub fn arguments<'a>() -> ArgMatches<'a>
                           .arg(sort)
                           .arg(order)
                           .arg(columns)
+                          .after_help(license)
+                          .set_term_width(80)
                           .get_matches()
 }
