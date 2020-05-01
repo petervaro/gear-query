@@ -7,6 +7,8 @@ mod table;
 mod column;
 mod sum;
 
+use std::ops::Deref;
+
 use clap::ArgMatches;
 
 pub use error::{
@@ -90,9 +92,14 @@ fn filtered_gear<'a>(gear: &'a Gear,
 pub fn main() -> Result<()>
 {
     let arguments = arguments();
-    let gear = Gear::from_toml(arguments.value_of("path")
-                                        .unwrap_or("gear.toml"))?;
-    let results = filtered_gear(&gear, &arguments);
+    let gear = Gear::from_toml(arguments.value_of("path").unwrap())?;
+    let results =
+        {
+            let mut results = filtered_gear(&gear, &arguments);
+            let sort_by = arguments.value_of("sort").unwrap();
+            results.sort_unstable_by(Item::comparer_by(sort_by));
+            results
+        };
 
     if results.is_empty()
     {
@@ -111,7 +118,18 @@ pub fn main() -> Result<()>
 
                 headers
             };
-        println!("{}", Table::new(headers, &results));
+
+        let table =
+            match arguments.value_of("order").unwrap()
+            {
+                "ascending" =>
+                    Table::new(headers, results.iter().map(Deref::deref)),
+                "descending" =>
+                    Table::new(headers, results.iter().rev().map(Deref::deref)),
+                _ => unreachable!(),
+            };
+
+        println!("{}", table);
         match results.len()
         {
             1 => println!("1 item found"),

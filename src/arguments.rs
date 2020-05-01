@@ -82,7 +82,8 @@ pub fn arguments<'a>() -> ArgMatches<'a>
                               .value_name("COLUMN")
                               .multiple(false)
                               .possible_values(&Item::FIELDS)
-                              .help("N/A");
+                              .default_value(Item::default_field())
+                              .help("Sort rows by a specific column");
 
     let order =
         {
@@ -93,7 +94,8 @@ pub fn arguments<'a>() -> ArgMatches<'a>
                                    .value_name("ORDER")
                                    .multiple(false)
                                    .possible_values(&values)
-                                   .help("N/A")
+                                   .default_value(values[0])
+                                   .help("Order rows")
         };
 
     let columns =
@@ -111,10 +113,10 @@ pub fn arguments<'a>() -> ArgMatches<'a>
         Arg::with_name("path").takes_value(true)
                               .value_name("PATH")
                               .multiple(false)
+                              .default_value("gear.toml")
                               .index(1)
                               .help("Specify path to the TOML file contains \
-                                     gear items.  If not specified 'gear.toml' \
-                                     is used in the current directory");
+                                     gear items");
 
     // TODO: use CARGO_PKG_DESCRIPTION to populer `.about`
     App::new("Gear Query").version(env!("CARGO_PKG_VERSION"))

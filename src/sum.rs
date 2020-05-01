@@ -37,7 +37,7 @@ impl Sum
                 let sum = items.iter().map(|item| item.price()).sum::<f32>();
                 unit.format_to_string(sum, &mut formatted);
             },
-            _ => panic!("Invalid column: {}", column),
+            _ => unreachable!(),
         };
 
         Self(formatted)

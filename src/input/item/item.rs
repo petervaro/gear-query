@@ -1,5 +1,6 @@
 use std::{
-    ops::Deref,
+    cmp::Ordering,
+    cell::Cell,
     collections::HashSet,
 };
 
@@ -15,7 +16,7 @@ use crate::{
 
 
 /*----------------------------------------------------------------------------*/
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub struct Item
 {
     kind: String,
@@ -25,6 +26,11 @@ pub struct Item
     price: Option<f32>,
     distances: HashSet<String>,
     temperatures: HashSet<String>,
+
+    #[serde(skip)]
+    ordered_distances: Cell<Option<Vec<String>>>,
+    #[serde(skip)]
+    ordered_temperatures: Cell<Option<Vec<String>>>,
 }
 
 
@@ -41,21 +47,15 @@ impl Item
                                            "temperatures"];
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub const fn default_field() -> &'static str
+    {
+        Self::FIELDS[1]
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     pub fn group(&self) -> Option<&str>
     {
         self.group.as_ref().map(String::as_str)
-    }
-
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    pub fn is_distance(&self, distance: &str) -> bool
-    {
-        self.distances.contains(distance)
-    }
-
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    pub fn is_temperature(&self, temperature: &str) -> bool
-    {
-        self.temperatures.contains(temperature)
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -71,13 +71,25 @@ impl Item
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn is_distance(&self, distance: &str) -> bool
+    {
+        self.distances.contains(distance)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn is_temperature(&self, temperature: &str) -> bool
+    {
+        self.temperatures.contains(temperature)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     pub fn columns<'a>(&'a self, columns: &'a [&'a str]) -> Columns<'a>
     {
         Columns::new(self, columns)
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    pub fn column(&self, column: &str) -> Column
+    pub(super) fn column(&self, column: &str) -> Column
     {
         use Alignment::*;
         let (alignment, content) =
@@ -88,35 +100,179 @@ impl Item
                 "group" => (Left, self.group.as_ref().map(String::clone)),
                 "weight" => (Right, self.weight.map(|w| format!("{}g", w))),
                 "price" => (Right, self.price.map(|p| format!("\u{00A3}{:.2}", p))),
-                "distances" => (Left, join_hash_set(&self.distances, " / ")),
-                "temperatures" => (Left, join_hash_set(&self.temperatures, " / ")),
-                _ => panic!("Invalid column: {}", column),
+                "distances" =>
+                {
+                    let distances =
+                        if self.distances.is_empty()
+                        {
+                            None
+                        }
+                        else
+                        {
+                            Some(self.ordered_distances().join(" / "))
+                        };
+
+                    (Left, distances)
+                },
+                "temperatures" =>
+                {
+                    let temperatures =
+                        if self.temperatures.is_empty()
+                        {
+                            None
+                        }
+                        else
+                        {
+                            Some(self.ordered_temperatures().join(" / "))
+                        };
+
+                    (Left, temperatures)
+                },
+                _ => unreachable!(),
             };
 
         Column::new(alignment, content.into())
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn comparer_by(field: &str) -> fn(&&Self, &&Self) -> Ordering
+    {
+        match field
+        {
+            "kind" => compare_by_kind,
+            "name" => compare_by_name,
+            "group" => compare_by_group,
+            "weight" => compare_by_weight,
+            "price" => compare_by_price,
+            "distances" => compare_by_distances,
+            "temperatures" => compare_by_temperatures,
+            _ => unreachable!(),
+        }
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn _ordered_distances(&self) -> &Option<Vec<String>>
+    {
+        unsafe
+        {
+            self.ordered_distances.as_ptr().as_ref().unwrap()
+        }
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn ordered_distances(&self) -> &Vec<String>
+    {
+        match self._ordered_distances()
+        {
+            Some(ordered_distances) => ordered_distances,
+            None =>
+            {
+                let ordered_distances = order_hash_set(&self.distances);
+                self.ordered_distances.replace(Some(ordered_distances));
+                self._ordered_distances().as_ref().unwrap()
+            }
+        }
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn _ordered_temperatures(&self) -> &Option<Vec<String>>
+    {
+        unsafe
+        {
+            self.ordered_temperatures.as_ptr().as_ref().unwrap()
+        }
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn ordered_temperatures(&self) -> &Vec<String>
+    {
+        match self._ordered_temperatures()
+        {
+            Some(ordered_temperatures) => ordered_temperatures,
+            None =>
+            {
+                let ordered_temperatures = order_hash_set(&self.temperatures);
+                self.ordered_temperatures.replace(Some(ordered_temperatures));
+                self._ordered_temperatures().as_ref().unwrap()
+            }
+        }
     }
 }
 
 
 /*----------------------------------------------------------------------------*/
-fn join_hash_set(items: &HashSet<String>, separator: &str) -> Option<String>
+fn order_hash_set(hash_set: &HashSet<String>) -> Vec<String>
 {
-    if items.is_empty()
+    if hash_set.is_empty()
     {
-        None
+        Vec::new()
     }
     else
     {
-        let mut items = items.iter().collect::<Vec<&String>>();
-        items.sort_unstable();
-        let mut items = items.iter().map(Deref::deref);
-        let mut joined = String::from(items.next().unwrap());
-        for item in items
-        {
-            joined.push_str(separator);
-            joined.push_str(item);
-        }
-
-        Some(joined)
+        let mut ordered = hash_set.iter()
+                                  .map(Clone::clone)
+                                  .collect::<Vec<String>>();
+        ordered.sort_unstable();
+        ordered
     }
+}
+
+
+/*----------------------------------------------------------------------------*/
+fn compare_by_kind(left: &&Item,
+                   right: &&Item) -> Ordering
+{
+    left.kind.cmp(&right.kind)
+}
+
+
+/*----------------------------------------------------------------------------*/
+fn compare_by_name(left: &&Item,
+                   right: &&Item) -> Ordering
+{
+    left.name.cmp(&right.name)
+}
+
+
+/*----------------------------------------------------------------------------*/
+fn compare_by_group(left: &&Item,
+                    right: &&Item) -> Ordering
+{
+    left.group.cmp(&right.group)
+}
+
+
+/*----------------------------------------------------------------------------*/
+fn compare_by_weight(left: &&Item,
+                     right: &&Item) -> Ordering
+{
+    left.weight.cmp(&right.weight)
+}
+
+
+/*----------------------------------------------------------------------------*/
+fn compare_by_price(left: &&Item,
+                    right: &&Item) -> Ordering
+{
+    left.price.partial_cmp(&right.price).unwrap_or(Ordering::Equal)
+}
+
+
+/*----------------------------------------------------------------------------*/
+fn compare_by_distances(left: &&Item,
+                        right: &&Item) -> Ordering
+{
+    let left = left.ordered_distances();
+    let right = right.ordered_distances();
+    left.cmp(&right)
+}
+
+
+/*----------------------------------------------------------------------------*/
+fn compare_by_temperatures(left: &&Item,
+                           right: &&Item) -> Ordering
+{
+    let left = left.ordered_temperatures();
+    let right = right.ordered_temperatures();
+    left.cmp(&right)
 }

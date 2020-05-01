@@ -28,8 +28,8 @@ impl<'a> Table<'a>
     const PADDING: usize = 2;
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    pub fn new(headers: Vec<&'a str>,
-               items: &[&Item]) -> Self
+    pub fn new<'f>(headers: Vec<&'a str>,
+                   items: impl Iterator<Item = &'f Item>) -> Self
     {
         let mut columns = Vec::new();
 
