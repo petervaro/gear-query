@@ -7,6 +7,8 @@ use std::{
 use serde::Deserialize;
 
 use crate::{
+    filter::Filter,
+    filters,
     column::{
         Column,
         Alignment,
@@ -135,67 +137,97 @@ impl Item
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    pub fn comparer_by(field: &str) -> fn(&&Self, &&Self) -> Ordering
+    fn inner_of(cell: &Cell<Option<Vec<String>>>) -> &Option<Vec<String>>
     {
-        match field
-        {
-            "kind" => compare_by_kind,
-            "name" => compare_by_name,
-            "group" => compare_by_group,
-            "weight" => compare_by_weight,
-            "price" => compare_by_price,
-            "distances" => compare_by_distances,
-            "temperatures" => compare_by_temperatures,
-            _ => unreachable!(),
-        }
-    }
-
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    fn _ordered_distances(&self) -> &Option<Vec<String>>
-    {
-        unsafe
-        {
-            self.ordered_distances.as_ptr().as_ref().unwrap()
-        }
+        unsafe { cell.as_ptr().as_ref().unwrap() }
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     fn ordered_distances(&self) -> &Vec<String>
     {
-        match self._ordered_distances()
-        {
-            Some(ordered_distances) => ordered_distances,
-            None =>
+        Self::inner_of(&self.ordered_distances).as_ref().unwrap_or_else(
+            ||
             {
                 let ordered_distances = order_hash_set(&self.distances);
                 self.ordered_distances.replace(Some(ordered_distances));
-                self._ordered_distances().as_ref().unwrap()
-            }
-        }
-    }
-
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    fn _ordered_temperatures(&self) -> &Option<Vec<String>>
-    {
-        unsafe
-        {
-            self.ordered_temperatures.as_ptr().as_ref().unwrap()
-        }
+                Self::inner_of(&self.ordered_distances).as_ref().unwrap()
+            })
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     fn ordered_temperatures(&self) -> &Vec<String>
     {
-        match self._ordered_temperatures()
-        {
-            Some(ordered_temperatures) => ordered_temperatures,
-            None =>
+        Self::inner_of(&self.ordered_temperatures).as_ref().unwrap_or_else(
+            ||
             {
                 let ordered_temperatures = order_hash_set(&self.temperatures);
                 self.ordered_temperatures.replace(Some(ordered_temperatures));
-                self._ordered_temperatures().as_ref().unwrap()
-            }
+                Self::inner_of(&self.ordered_temperatures).as_ref().unwrap()
+            })
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn filter(&self, filters: &Vec<filters::Filter>) -> bool
+    {
+        filters.iter().all(|filter| filter.filter(self))
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn comparer_by(field: &str) -> fn(&Self, &Self) -> Ordering
+    {
+        match field
+        {
+            "kind" => Self::compare_by_kind,
+            "name" => Self::compare_by_name,
+            "group" => Self::compare_by_group,
+            "weight" => Self::compare_by_weight,
+            "price" => Self::compare_by_price,
+            "distances" => Self::compare_by_distances,
+            "temperatures" => Self::compare_by_temperatures,
+            _ => unreachable!(),
         }
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn compare_by_kind(&self, other: &Self) -> Ordering
+    {
+        self.kind.cmp(&other.kind)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn compare_by_name(&self, other: &Self) -> Ordering
+    {
+        self.name.cmp(&other.name)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn compare_by_group(&self, other: &Self) -> Ordering
+    {
+        self.group.cmp(&other.group)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn compare_by_weight(&self, other: &Self) -> Ordering
+    {
+        self.weight.cmp(&other.weight)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn compare_by_price(&self, other: &Self) -> Ordering
+    {
+        self.price.partial_cmp(&other.price).unwrap_or(Ordering::Equal)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn compare_by_distances(&self, other: &Self) -> Ordering
+    {
+        self.ordered_distances().cmp(other.ordered_distances())
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn compare_by_temperatures(&self, other: &Self) -> Ordering
+    {
+        self.ordered_temperatures().cmp(other.ordered_temperatures())
     }
 }
 
@@ -215,64 +247,4 @@ fn order_hash_set(hash_set: &HashSet<String>) -> Vec<String>
         ordered.sort_unstable();
         ordered
     }
-}
-
-
-/*----------------------------------------------------------------------------*/
-fn compare_by_kind(left: &&Item,
-                   right: &&Item) -> Ordering
-{
-    left.kind.cmp(&right.kind)
-}
-
-
-/*----------------------------------------------------------------------------*/
-fn compare_by_name(left: &&Item,
-                   right: &&Item) -> Ordering
-{
-    left.name.cmp(&right.name)
-}
-
-
-/*----------------------------------------------------------------------------*/
-fn compare_by_group(left: &&Item,
-                    right: &&Item) -> Ordering
-{
-    left.group.cmp(&right.group)
-}
-
-
-/*----------------------------------------------------------------------------*/
-fn compare_by_weight(left: &&Item,
-                     right: &&Item) -> Ordering
-{
-    left.weight.cmp(&right.weight)
-}
-
-
-/*----------------------------------------------------------------------------*/
-fn compare_by_price(left: &&Item,
-                    right: &&Item) -> Ordering
-{
-    left.price.partial_cmp(&right.price).unwrap_or(Ordering::Equal)
-}
-
-
-/*----------------------------------------------------------------------------*/
-fn compare_by_distances(left: &&Item,
-                        right: &&Item) -> Ordering
-{
-    let left = left.ordered_distances();
-    let right = right.ordered_distances();
-    left.cmp(&right)
-}
-
-
-/*----------------------------------------------------------------------------*/
-fn compare_by_temperatures(left: &&Item,
-                           right: &&Item) -> Ordering
-{
-    let left = left.ordered_temperatures();
-    let right = right.ordered_temperatures();
-    left.cmp(&right)
 }

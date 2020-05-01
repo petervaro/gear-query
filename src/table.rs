@@ -98,12 +98,7 @@ impl<'a> Display for Table<'a>
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result
     {
-        let column_widths =
-            {
-                let mut column_widths = Vec::with_capacity(self.headers.len());
-                column_widths.extend(self.column_widths());
-                column_widths
-            };
+        let column_widths = self.column_widths().collect::<Vec<usize>>();
         let decorator = Self::decorator(&column_widths);
 
         writeln!(f, "{}", decorator)?;
