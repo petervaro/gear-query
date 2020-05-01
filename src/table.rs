@@ -6,7 +6,10 @@ use std::fmt::{
 
 use crate::{
     input::Item,
-    column::Column,
+    column::{
+        Column,
+        Alignment,
+    },
 };
 
 
@@ -29,6 +32,13 @@ impl<'a> Table<'a>
                items: &[&Item]) -> Self
     {
         let mut columns = Vec::new();
+
+        /* Add headers as columns */
+        columns.extend(headers.iter().map(
+            |header| Column::from_string(Alignment::Centre,
+                                         header.to_uppercase())));
+
+        /* Add items as columns */
         for item in items
         {
             columns.extend(item.columns(&headers));
@@ -98,8 +108,6 @@ impl<'a> Display for Table<'a>
 
         writeln!(f, "{}", decorator)?;
 
-        // TODO: print headers!
-
         for row in self.rows()
         {
             write!(f, "|")?;
@@ -109,6 +117,7 @@ impl<'a> Display for Table<'a>
                 write!(f, "{}", column.as_fitted(available_width - Self::PADDING))?;
                 write!(f, " |")?;
             }
+
             writeln!(f, "\n{}", decorator)?;
         }
 

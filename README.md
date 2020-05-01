@@ -29,8 +29,9 @@ needs to be specified.
 
 These values are used to properly represent the data in the items.  Currently
 the `weight` and `price` _formatters_ could be specified, each with a unit
-symbol and the position of the symbol (either `'PREFIX'` or `'SUFFIX'`):
+symbol and the position of the symbol (either `'PREFIX'` or `'SUFFIX'`).
 
+#### Example
 
 ```toml
 # Here we describe that all weight values are in grams and
@@ -67,14 +68,11 @@ There are 2 main sections of the gear list where items could be specified:
   > &mdash; [Wikipedia][base]
 - `consumables`
 
-> **Note**: There are known limiations which are going to be improved in the
-> future:
+> **Note**: The currently known limiation is:
 > - The `group` attribute only contributes to the filtering of the query (i.e.
 >   `-g` or `--group`) and has no validation or direct link to the actual
 >   [group](#group) entities defined in the gear list file.  Which also means
 >   items do not inherit the defined properties from the groups.
-> - The `weight` has to be in gram
-> - The `price` has to be in pound sterling (GBP)
 
 #### Example
 

@@ -24,6 +24,17 @@ impl Column
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn from_string(alignment: Alignment,
+                       content: String) -> Self
+    {
+        Self
+        {
+            alignment,
+            content: Content::from(Some(content)),
+        }
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     pub fn width(&self) -> usize
     {
         self.content.width()

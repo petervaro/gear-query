@@ -29,13 +29,13 @@ impl Sum
             {
                 let unit = meta.weight();
                 let sum = items.iter().map(|item| item.weight()).sum::<i32>();
-                unit.format_to_string(sum, &mut formatted)
+                unit.format_to_string(sum, &mut formatted);
             },
             "price" =>
             {
                 let unit = meta.price();
                 let sum = items.iter().map(|item| item.price()).sum::<f32>();
-                unit.format_to_string(sum, &mut formatted)
+                unit.format_to_string(sum, &mut formatted);
             },
             _ => panic!("Invalid column: {}", column),
         };
