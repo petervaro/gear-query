@@ -21,9 +21,9 @@ $ printf 'export PATH=$PATH:$HOME/.cargo/bin\n' > ~/.bashrc
 
 The gear list file uses the [TOML][toml] format.
 
-There are 2 main entity types that could be used to describe the gear list:
-items and groups.  But before these could be added the `meta` section's values
-needs to be specified.
+There's a single entity type, the item, which could be used to describe the gear
+list.  But before it could be used, the `meta` section's values needs to be
+specified.
 
 ### Meta
 
@@ -59,20 +59,17 @@ other attributes are optional, but they could be the followings:
 - `distances`: list of strings
 - `temperatures`: list of strings
 
+There are no predefined values, `distances` or `temperatures` could be arbitrary
+as well the `group` an item _belongs to_.
+
 There are 2 main sections of the gear list where items could be specified:
 
-- `base`:
+- `base`: According to the following definition:
   > Base weight (the weight of a backpack plus the gear inside & outside it,
   > excluding consumables such as food, water, and fuel, which vary depending on
   > the duration and style of trip)
   > &mdash; [Wikipedia][base]
-- `consumables`
-
-> **Note**: The currently known limiation is:
-> - The `group` attribute only contributes to the filtering of the query (i.e.
->   `-g` or `--group`) and has no validation or direct link to the actual
->   [group](#group) entities defined in the gear list file.  Which also means
->   items do not inherit the defined properties from the groups.
+- `consumables`: Everything else
 
 #### Example
 
@@ -124,25 +121,6 @@ name = "In Reservoir"
 weight = 2000
 distances = ["Long"]
 temperatures = ["Warm", "Cold"]
-```
-
-### Group
-
-A group is an entity to help _organise_ the [item](#item)s, thus makes it easier
-to query them.  It has one mandatory attribute: `name`, a string, and two
-optional arguments `price`, a float, and `weight`, an integer.
-
-#### Example
-
-```toml
-[[groups]]
-name = "First Aid Kit"
-
-[[groups]]
-name = "Kitchen"
-
-[[groups]]
-name = "Toiletries"
 ```
 
 ## Usage

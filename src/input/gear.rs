@@ -8,7 +8,6 @@ use crate::{
     input::{
         Meta,
         Item,
-        Group,
     },
     filters::{
         Filter,
@@ -26,7 +25,6 @@ pub struct Gear
     meta: Meta,
     base: Vec<Item>,
     consumables: Vec<Item>,
-    groups: Vec<Group>,
 }
 
 
@@ -45,24 +43,6 @@ impl Gear
     pub fn meta(&self) -> &Meta
     {
         &self.meta
-    }
-
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    pub fn base(&self) -> &Vec<Item>
-    {
-        &self.base
-    }
-
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    pub fn consumables(&self) -> &Vec<Item>
-    {
-        &self.consumables
-    }
-
-    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    pub fn groups(&self) -> &Vec<Group>
-    {
-        &self.groups
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -104,16 +84,14 @@ impl Gear
         let mut results = Vec::new();
         if is_all || is_base
         {
-            results.extend(self.base()
-                               .iter()
-                               .filter(|item| item.filter(&filters)));
+            results.extend(
+                self.base.iter().filter(|item| item.filter(&filters)));
         }
 
         if is_all || is_consumables
         {
-            results.extend(self.consumables()
-                               .iter()
-                               .filter(|item| item.filter(&filters)));
+            results.extend(
+                self.consumables.iter().filter(|item| item.filter(&filters)));
         }
 
         results

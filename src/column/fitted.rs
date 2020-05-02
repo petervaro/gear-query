@@ -5,21 +5,27 @@ use std::fmt::{
 };
 
 use crate::column::{
-    Alignment,
     content::Content,
-    left::LeftAlignedFittedColumn,
-    centre::CentreAlignedFittedColumn,
-    right::RightAlignedFittedColumn,
+    aligned::{
+        Alignment,
+        LeftAlignedFittedColumn,
+        CentreAlignedFittedColumn,
+        RightAlignedFittedColumn,
+    },
 };
 
 
 /*----------------------------------------------------------------------------*/
-pub enum FittedColumn<'a>
+enum AlignedFitted<'a>
 {
-    LeftAligned(LeftAlignedFittedColumn<'a>),
-    CentreAligned(CentreAlignedFittedColumn<'a>),
-    RightAligned(RightAlignedFittedColumn<'a>),
+    Left(LeftAlignedFittedColumn<'a>),
+    Centre(CentreAlignedFittedColumn<'a>),
+    Right(RightAlignedFittedColumn<'a>),
 }
+
+
+/*----------------------------------------------------------------------------*/
+pub struct FittedColumn<'a>(AlignedFitted<'a>);
 
 
 /*----------------------------------------------------------------------------*/
@@ -30,14 +36,19 @@ impl<'a> FittedColumn<'a>
                content: &'a Content,
                width: usize) -> Self
     {
-        use Alignment::*;
-        use FittedColumn::*;
-        match alignment
-        {
-            Left => LeftAligned(LeftAlignedFittedColumn::new(content, width)),
-            Centre => CentreAligned(CentreAlignedFittedColumn::new(content, width)),
-            Right => RightAligned(RightAlignedFittedColumn::new(content, width)),
-        }
+        use AlignedFitted::*;
+        let fitted =
+            match alignment
+            {
+                Alignment::Left =>
+                    Left(LeftAlignedFittedColumn::new(content, width)),
+                Alignment::Centre =>
+                    Centre(CentreAlignedFittedColumn::new(content, width)),
+                Alignment::Right =>
+                    Right(RightAlignedFittedColumn::new(content, width)),
+            };
+
+        Self(fitted)
     }
 }
 
@@ -48,12 +59,12 @@ impl<'a> Display for FittedColumn<'a>
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result
     {
-        use FittedColumn::*;
-        match self
+        use AlignedFitted::*;
+        match &self.0
         {
-            LeftAligned(column) => column.fmt(f),
-            CentreAligned(column) => column.fmt(f),
-            RightAligned(column) => column.fmt(f),
+            Left(column) => write!(f, "{}", column),
+            Centre(column) => write!(f, "{}", column),
+            Right(column) => write!(f, "{}", column),
         }
     }
 }

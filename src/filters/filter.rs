@@ -1,6 +1,6 @@
 use crate::{
+    filter,
     input::Item,
-    filter::Filter as _Filter,
     filters::{
         IsInGroups,
         IsInDistances,
@@ -20,7 +20,7 @@ pub enum Filter
 
 
 /*----------------------------------------------------------------------------*/
-impl _Filter for Filter
+impl filter::Filter for Filter
 {
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     fn filter(&self, item: &Item) -> bool

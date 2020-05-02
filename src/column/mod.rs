@@ -1,10 +1,7 @@
 mod column;
-mod align;
 mod content;
-mod left;
-mod centre;
-mod right;
+mod aligned;
 mod fitted;
 
 pub use column::Column;
-pub use align::Alignment;
+pub use aligned::Alignment;

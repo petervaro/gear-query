@@ -31,6 +31,6 @@ impl Filter for IsInTemperatures
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     fn filter(&self, item: &Item) -> bool
     {
-        self.temperatures.iter().any(|t| item.is_temperature(t))
+        self.temperatures.iter().any(|temperature| item.is_temperature(temperature))
     }
 }

@@ -31,6 +31,6 @@ impl Filter for IsInDistances
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     fn filter(&self, item: &Item) -> bool
     {
-        self.distances.iter().any(|d| item.is_distance(d))
+        self.distances.iter().any(|distance| item.is_distance(distance))
     }
 }
