@@ -2,9 +2,9 @@ use crate::{
     filter,
     input::Item,
     filters::{
-        IsInGroups,
-        IsInDistances,
-        IsInTemperatures,
+        is_in_groups::IsInGroups,
+        is_in_distances::IsInDistances,
+        is_in_temperatures::IsInTemperatures,
     },
 };
 
@@ -28,9 +28,9 @@ impl filter::Filter for Filter
         use Filter::*;
         match self
         {
-            IsInGroups(f) => f.filter(item),
-            IsInDistances(f) => f.filter(item),
-            IsInTemperatures(f) => f.filter(item),
+            IsInGroups(filter) => filter.filter(item),
+            IsInDistances(filter) => filter.filter(item),
+            IsInTemperatures(filter) => filter.filter(item),
         }
     }
 }

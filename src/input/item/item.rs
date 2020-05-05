@@ -13,7 +13,11 @@ use crate::{
         Column,
         Alignment,
     },
-    input::item::Columns,
+    input::{
+        Formatters,
+        item::Columns,
+    },
+    validators::Validity,
 };
 
 
@@ -26,8 +30,9 @@ pub struct Item
     group: Option<String>,
     weight: Option<i32>,
     price: Option<f32>,
-    distances: HashSet<String>,
-    temperatures: HashSet<String>,
+
+    distances: Option<HashSet<String>>,
+    temperatures: Option<HashSet<String>>,
 
     #[serde(skip)]
     ordered_distances: Cell<Option<Vec<String>>>,
@@ -55,9 +60,32 @@ impl Item
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn id(&self) -> &str
+    {
+        self.name.as_ref().unwrap_or(&self.kind).as_str()
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     pub fn group(&self) -> Option<&str>
     {
         self.group.as_ref().map(String::as_str)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn group_validity<'f>(
+        &'f self, valid_groups: &'f HashSet<String>) -> Validity<&'f String>
+    {
+        use Validity::*;
+
+        debug_assert!(!valid_groups.is_empty());
+
+        match self.group.as_ref()
+        {
+            None => Missing,
+            Some(group) =>
+                if valid_groups.contains(group) { Valid }
+                else { Invalid(group) },
+        }
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -75,23 +103,63 @@ impl Item
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     pub fn is_distance(&self, distance: &str) -> bool
     {
-        self.distances.contains(distance)
+        self.distances.as_ref().map_or(
+            false,
+            |distances| distances.contains(distance))
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub fn distances_validity<'f>(
+        &'f self, valid_distances: &'f HashSet<String>) -> Validity<&'f String>
+    {
+        use Validity::*;
+
+        debug_assert!(!valid_distances.is_empty());
+
+        self.distances.as_ref().map_or(
+            Missing,
+            |distances|
+                if distances.is_empty() { Missing }
+                else { distances.difference(valid_distances)
+                                .next()
+                                .map_or(Valid, Invalid) })
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     pub fn is_temperature(&self, temperature: &str) -> bool
     {
-        self.temperatures.contains(temperature)
+        self.temperatures.as_ref().map_or(
+            false,
+            |temperatures| temperatures.contains(temperature))
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    pub fn columns<'a>(&'a self, columns: &'a [&'a str]) -> Columns<'a>
+    pub fn temperatures_validity<'f>(
+        &'f self, valid_temperatures: &'f HashSet<String>) -> Validity<&'f String>
     {
-        Columns::new(self, columns)
+        use Validity::*;
+
+        debug_assert!(!valid_temperatures.is_empty());
+
+        self.temperatures.as_ref().map_or(
+            Missing,
+            |temperatures|
+                if temperatures.is_empty() { Missing }
+                else { temperatures.difference(valid_temperatures)
+                                   .next()
+                                   .map_or(Valid, Invalid) })
     }
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-    pub(super) fn column(&self, column: &str) -> Column
+    pub fn columns<'a>(&'a self, columns: &'a [&'a str],
+                                 formatters: &'a Formatters<'a>) -> Columns<'a>
+    {
+        Columns::new(self, columns, formatters)
+    }
+
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    pub(super) fn column(&self, column: &str,
+                                formatters: &Formatters<'_>) -> Column
     {
         use Alignment::*;
         let (alignment, content) =
@@ -100,33 +168,47 @@ impl Item
                 "kind" => (Left, Some(self.kind.clone())),
                 "name" => (Left, self.name.as_ref().map(String::clone)),
                 "group" => (Left, self.group.as_ref().map(String::clone)),
-                "weight" => (Right, self.weight.map(|w| format!("{}g", w))),
-                "price" => (Right, self.price.map(|p| format!("\u{00A3}{:.2}", p))),
+                "weight" =>
+                {
+                    let weight = self.weight.map(
+                        |weight|
+                        {
+                            let mut formatted = String::new();
+                            formatters.weight.format_to_string(weight, &mut formatted);
+                            formatted
+                        });
+
+                    (Right, weight)
+                },
+                "price" =>
+                {
+                    let price = self.price.map(
+                        |price|
+                        {
+                            let mut formatted = String::new();
+                            formatters.price.format_to_string(price, &mut formatted);
+                            formatted
+                        });
+
+                    (Right, price)
+                },
                 "distances" =>
                 {
-                    let distances =
-                        if self.distances.is_empty()
-                        {
-                            None
-                        }
-                        else
-                        {
-                            Some(self.ordered_distances().join(" / "))
-                        };
+                    let distances = self.distances.as_ref().map_or(
+                        None,
+                        |distances|
+                            if distances.is_empty() { None }
+                            else { Some(self.ordered_distances().join(" / ")) });
 
                     (Left, distances)
                 },
                 "temperatures" =>
                 {
-                    let temperatures =
-                        if self.temperatures.is_empty()
-                        {
-                            None
-                        }
-                        else
-                        {
-                            Some(self.ordered_temperatures().join(" / "))
-                        };
+                    let temperatures = self.temperatures.as_ref().map_or(
+                        None,
+                        |temperatures|
+                            if temperatures.is_empty() { None }
+                            else { Some(self.ordered_temperatures().join(" / ")) });
 
                     (Left, temperatures)
                 },
@@ -148,7 +230,8 @@ impl Item
         Self::inner_of(&self.ordered_distances).as_ref().unwrap_or_else(
             ||
             {
-                let ordered_distances = order_hash_set(&self.distances);
+                let distances = self.distances.as_ref().unwrap();
+                let ordered_distances = order_hash_set(distances);
                 self.ordered_distances.replace(Some(ordered_distances));
                 Self::inner_of(&self.ordered_distances).as_ref().unwrap()
             })
@@ -160,7 +243,8 @@ impl Item
         Self::inner_of(&self.ordered_temperatures).as_ref().unwrap_or_else(
             ||
             {
-                let ordered_temperatures = order_hash_set(&self.temperatures);
+                let temperatures = self.temperatures.as_ref().unwrap();
+                let ordered_temperatures = order_hash_set(temperatures);
                 self.ordered_temperatures.replace(Some(ordered_temperatures));
                 Self::inner_of(&self.ordered_temperatures).as_ref().unwrap()
             })

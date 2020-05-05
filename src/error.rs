@@ -19,6 +19,7 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 #[derive(Debug)]
 pub enum Error
 {
+    GearError(String),
     IoError(io::Error),
     TomlDeError(de::Error)
 }
@@ -37,9 +38,21 @@ impl Display for Error
         use Error::*;
         match self
         {
+            GearError(message) => write!(f, "{}", message),
             IoError(error) => write!(f, "{}", error),
             TomlDeError(error) => write!(f, "{}", error),
         }
+    }
+}
+
+
+/*----------------------------------------------------------------------------*/
+impl From<String> for Error
+{
+    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+    fn from(message: String) -> Self
+    {
+        Self::GearError(message)
     }
 }
 

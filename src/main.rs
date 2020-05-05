@@ -2,7 +2,10 @@ use gear;
 
 
 /*----------------------------------------------------------------------------*/
-fn main() -> gear::Result<()>
+fn main()
 {
-    gear::main()
+    if let Err(error) = gear::main()
+    {
+        eprintln!("Error: {}", error);
+    }
 }

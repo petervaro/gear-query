@@ -6,6 +6,8 @@ mod filters;
 mod table;
 mod column;
 mod sum;
+mod validate;
+mod validators;
 
 use std::ops::Deref;
 
@@ -29,12 +31,13 @@ pub fn main() -> Result<()>
     let gear = Gear::from_toml(arguments.value_of("path").unwrap())?;
     let results =
         {
-            let mut results = gear.filter(arguments.is_present("all"),
-                                          arguments.is_present("base"),
-                                          arguments.is_present("consumables"),
-                                          arguments.values_of("groups"),
-                                          arguments.values_of("distances"),
-                                          arguments.values_of("temperatures"));
+            let mut results =
+                gear.filter_and_validate(arguments.is_present("all"),
+                                         arguments.is_present("base"),
+                                         arguments.is_present("consumables"),
+                                         arguments.values_of("groups"),
+                                         arguments.values_of("distances"),
+                                         arguments.values_of("temperatures"))?;
             let comparer = Item::comparer_by(arguments.value_of("sort").unwrap());
             results.sort_unstable_by(|&left, &right| comparer(left, right));
             results
@@ -61,10 +64,12 @@ pub fn main() -> Result<()>
         let table =
             match arguments.value_of("order").unwrap()
             {
-                "ascending" =>
-                    Table::new(headers, results.iter().map(Deref::deref)),
-                "descending" =>
-                    Table::new(headers, results.iter().rev().map(Deref::deref)),
+                "ascending" => Table::new(headers,
+                                          results.iter().map(Deref::deref),
+                                          gear.meta().formatters()),
+                "descending" => Table::new(headers,
+                                           results.iter().rev().map(Deref::deref),
+                                           gear.meta().formatters()),
                 _ => unreachable!(),
             };
 

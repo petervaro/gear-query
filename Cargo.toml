@@ -2,7 +2,7 @@
 name = "gear"
 description = """Gear query is an easy to use command line tool to keep track \
                  and query outdoor / backpacking equipment"""
-version = "0.5.0"
+version = "0.7.0"
 authors = ["Peter Varo <hello@petervaro.com>"]
 edition = "2018"
 

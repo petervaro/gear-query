@@ -27,11 +27,13 @@ specified.
 
 ### Meta
 
+#### Units
+
 These values are used to properly represent the data in the items.  Currently
 the `weight` and `price` _formatters_ could be specified, each with a unit
 symbol and the position of the symbol (either `'PREFIX'` or `'SUFFIX'`).
 
-#### Example
+Example:
 
 ```toml
 # Here we describe that all weight values are in grams and
@@ -45,6 +47,25 @@ position = "SUFFIX"
 [meta.price]
 symbol = "$"
 position = "PREFIX"
+```
+
+#### Validators
+
+Validators could be defined optionally.  Their main purpose is to make sure for
+example that there are no typos regarding the specified values in the gear list
+or that all items define a specific attribute.
+
+Example:
+
+```toml
+[meta.groups]
+values = ["Shelter", "First Aid Kit", "Electronics"]
+
+[meta.distances]
+values = ["Short", "Long"]
+
+[meta.temperatures]
+values = ["Warm", "Cold"]
 ```
 
 ### Item

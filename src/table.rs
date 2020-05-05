@@ -5,7 +5,10 @@ use std::fmt::{
 };
 
 use crate::{
-    input::Item,
+    input::{
+        Item,
+        Formatters,
+    },
     column::{
         Column,
         Alignment,
@@ -29,7 +32,8 @@ impl<'a> Table<'a>
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
     pub fn new<'f>(headers: Vec<&'a str>,
-                   items: impl Iterator<Item = &'f Item>) -> Self
+                   items: impl Iterator<Item = &'f Item>,
+                   formatters: Formatters<'f>) -> Self
     {
         let mut columns = Vec::new();
 
@@ -41,7 +45,7 @@ impl<'a> Table<'a>
         /* Add items as columns */
         for item in items
         {
-            columns.extend(item.columns(&headers));
+            columns.extend(item.columns(&headers, &formatters));
         }
 
         Self
